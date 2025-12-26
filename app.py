@@ -2,74 +2,83 @@ import streamlit as st
 from datetime import date
 from supabase import create_client
 
-# ---------- SUPABASE ----------
-SUPABASE_URL = "https://lxuttbhtsywsqosewogt.supabase.co"
-SUPABASE_KEY = "sb_publishable_UUsaP-Hy9N-skV1CCp9hPQ_L8VbzQEG"
+# -------------------- CONFIG --------------------
+st.set_page_config(page_title="Day Planner", page_icon="🗓️", layout="centered")
+
+# -------------------- SUPABASE --------------------
+# These MUST be set in Streamlit Cloud Secrets
+SUPABASE_URL = st.secrets["https://lxuttbhtsywsqosewogt.supabase.co"]
+SUPABASE_KEY = st.secrets["sb_secret_XoIIiSIT5R_vcgSBhkbx5w__pb9-8Fy"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ---------- STATE ----------
+# -------------------- SESSION STATE --------------------
 if "page" not in st.session_state:
     st.session_state.page = "calendar"
 
 if "selected_date" not in st.session_state:
     st.session_state.selected_date = date.today()
 
-# ---------- UI ----------
-st.title("Day Planner")
+# -------------------- UI --------------------
+st.title("🗓️ Day Planner")
 
-# ---------- PAGE 1 : CALENDAR ----------
+# ======================================================
+# PAGE 1: CALENDAR
+# ======================================================
 if st.session_state.page == "calendar":
-    st.subheader("📅 Select a Day")
+    st.subheader("Select a day")
 
     picked_date = st.date_input(
-        "Click a date",
+        "Choose a date",
         st.session_state.selected_date
     )
 
-    if st.button("Open Day"):
+    if st.button("Open day"):
         st.session_state.selected_date = picked_date
         st.session_state.page = "day"
         st.rerun()
 
-# ---------- PAGE 2 : DAY PLAN ----------
+# ======================================================
+# PAGE 2: DAY VIEW
+# ======================================================
 elif st.session_state.page == "day":
     selected_date = st.session_state.selected_date
+    st.subheader(f"Tasks for {selected_date}")
 
-    st.subheader(f"📝 {selected_date}")
-
-    # ---- Add task ----
+    # ---------- ADD TASK ----------
     new_task = st.text_input("Add a task")
 
-    if st.button("➕ Add"):
+    if st.button("➕ Add task"):
         if new_task.strip():
             supabase.table("tasks").insert({
                 "task_date": str(selected_date),
-                "text": new_task,
+                "text": new_task.strip(),
                 "done": False
             }).execute()
             st.rerun()
 
     st.divider()
 
-    # ---- Load tasks ----
-    res = supabase.table("tasks") \
-        .select("*") \
-        .eq("task_date", str(selected_date)) \
-        .order("created_at") \
+    # ---------- LOAD TASKS ----------
+    response = (
+        supabase
+        .table("tasks")
+        .select("*")
+        .eq("task_date", str(selected_date))
+        .order("created_at")
         .execute()
+    )
 
-    tasks = res.data or []
+    tasks = response.data or []
 
-    # ---- Render tasks ----
+    # ---------- DISPLAY TASKS ----------
     for task in tasks:
         checked = st.checkbox(
             "",
-            task["done"],
+            value=task["done"],
             key=task["id"]
         )
 
-        # Update done state if changed
         if checked != task["done"]:
             supabase.table("tasks") \
                 .update({"done": checked}) \
@@ -83,6 +92,7 @@ elif st.session_state.page == "day":
 
     st.divider()
 
-    if st.button("⬅ Back to Calendar"):
+    if st.button("⬅ Back to calendar"):
         st.session_state.page = "calendar"
         st.rerun()
+
