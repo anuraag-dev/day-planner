@@ -7,8 +7,8 @@ st.set_page_config(page_title="Day Planner", page_icon="🗓️", layout="center
 
 # -------------------- SUPABASE --------------------
 # These MUST be set in Streamlit Cloud Secrets
-SUPABASE_URL = st.secrets["https://lxuttbhtsywsqosewogt.supabase.co"]
-SUPABASE_KEY = st.secrets["sb_secret_XoIIiSIT5R_vcgSBhkbx5w__pb9-8Fy"]
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -95,4 +95,3 @@ elif st.session_state.page == "day":
     if st.button("⬅ Back to calendar"):
         st.session_state.page = "calendar"
         st.rerun()
-
